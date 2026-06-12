@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>একনজরে সিরাত ﷺ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;700&family=Noto+Sans+Bengali:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+:root{--gold:#c9a96e;--gold-d:#9a7a4a;--green:#4caf82;--dark:#0d1117;--dark2:#161b22;--dark3:#21262d;--dark4:#30363d;--text:#e6edf3;--muted:#8b949e;--red:#c0392b;--r:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans Bengali',sans-serif;background:var(--dark);color:var(--text);min-height:100vh;overflow-x:hidden}
+.header{background:linear-gradient(135deg,#0d1117,#1a2332,#0d1117);border-bottom:2px solid var(--gold-d);padding:0 1rem;position:sticky;top:0;z-index:1000}
+.header-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{display:flex;align-items:center;gap:.75rem}
+.logo-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--gold-d),var(--gold));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem}
+.logo h1{font-family:'Noto Serif Bengali',serif;font-size:1.05rem;color:var(--gold);line-height:1.2}
+.logo p{font-size:.7rem;color:var(--muted)}
+.xp-pill{display:flex;align-items:center;gap:.4rem;background:var(--dark3);padding:.4rem .9rem;border-radius:20px;border:1px solid var(--dark4);font-size:.82rem;cursor:pointer}
+.xp-pill b{color:var(--gold)}
+.xp-pill span{color:var(--green)}
+.nav{background:var(--dark2);border-bottom:1px solid var(--dark4);overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav-inner{display:flex;max-width:1100px;margin:0 auto}
+.tab{flex-shrink:0;padding:.85rem 1.1rem;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);cursor:pointer;font-family:'Noto Sans Bengali',sans-serif;font-size:.82rem;white-space:nowrap;transition:all .2s}
+.tab:hover{color:var(--text);background:var(--dark3)}
+.tab.on{color:var(--gold);border-bottom-color:var(--gold);background:rgba(201,169,110,.06)}
+.panel{display:none;max-width:1100px;margin:0 auto;padding:1.5rem 1rem}
+.panel.on{display:block}
+.sh{font-family:'Noto Serif Bengali',serif;font-size:1.15rem;color:var(--gold);margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid var(--dark4)}
+/* MAP */
+#map{height:400px;border-radius:var(--r);border:2px solid var(--dark4)}
+.map-info{margin-top:1rem;background:var(--dark2);border:1px solid var(--dark4);border-radius:var(--r);padding:1.2rem;min-height:70px}
+.map-info h3{color:var(--gold);font-family:'Noto Serif Bengali',serif;margin-bottom:.5rem}
+.map-info li{color:var(--muted);font-size:.85rem;margin:.25rem 0}
+.legend{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+.leg-btn{background:var(--dark3);border:1px solid var(--dark4);border-radius:20px;padding:.3rem .8rem;font-size:.78rem;cursor:pointer;color:var(--text);transition:all .2s;font-family:'Noto Sans Bengali',sans-serif}
+.leg-btn:hover{border-color:var(--gold-d);background:var(--dark4)}
+/* TIMELINE */
+.phase-btns{display:flex;gap:.5rem;margin-bottom:1.2rem;flex-wrap:wrap}
+.pbtn{padding:.4rem 1rem;border-radius:20px;border:1px solid var(--dark4);background:var(--dark3);color:var(--muted);cursor:pointer;font-size:.82rem;font-family:'Noto Sans Bengali',sans-serif;transition:all .2s}
+.pbtn.on{background:var(--gold-d);color:#fff;border-color:var(--gold)}
+.tl{position:relative}
+.tl::before{content:'';position:absolute;left:27px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--gold-d),var(--green))}
+.tl-row{display:flex;gap:1rem;margin-bottom:1rem;cursor:pointer}
+.tl-dot{width:54px;height:54px;background:var(--dark3);border:2px solid var(--dark4);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;z-index:1;transition:all .2s}
+.tl-row:hover .tl-dot{border-color:var(--gold);transform:scale(1.08)}
+.tl-body{background:var(--dark2);border:1px solid var(--dark4);border-radius:var(--r);padding:.9rem 1rem;flex:1;transition:all .2s}
+.tl-row:hover .tl-body{background:var(--dark3)}
+.tl-yr{font-size:.72rem;color:var(--gold);font-weight:600;margin-bottom:.2rem}
+.tl-title{font-family:'Noto Serif Bengali',serif;font-size:.98rem}
+.tl-detail{font-size:.83rem;color:var(--muted);line-height:1.7;display:none;margin-top:.4rem}
+.tl-row.open .tl-detail{display:block}
+.tl-row.open .tl-body{border-color:var(--gold-d)}
+/* QUIZ */
+.stat-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem;margin-bottom:1.2rem}
+.scard{background:var(--dark2);border:1px solid var(--dark4);border-radius:var(--r);padding:.9rem;text-align:center}
+.scard .v{font-size:1.8rem;font-weight:700}
+.scard .l{font-size:.7rem;color:var(--muted)}
+.scard.gx .v{color:var(--gold)}
+.scard.gl .v{color:var(--green)}
+.scard.gs .v{color:#e07b4f}
+.bar-wrap{margin-bottom:1.2rem}
+.bar-wrap p{font-size:.78rem;color:var(--muted);margin-bottom:.35rem}
+.bar{height:8px;background:var(--dark3);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--gold-d),var(--gold));border-radius:4px;transition:width .5s}
+.qbox{background:var(--dark2);border:1px solid var(--dark4);border-radius:var(--r);padding:1.4rem;margin-bottom:1.2rem}
+.qq{font-family:'Noto Serif Bengali',serif;font-size:1.05rem;margin-bottom:1.1rem;line-height:1.7}
+.qopts{display:grid;gap:.55rem}
+.qopt{padding:.75rem 1rem;background:var(--dark3);border:2px solid var(--dark4);border-radius:8px;cursor:pointer;font-size:.88rem;font-family:'Noto Sans Bengali',sans-serif;color:var(--text);transition:all .2s;text-align:right}
+.qopt:hover:not(:disabled){border-color:var(--gold-d);background:rgba(201,169,110,.1)}
+.qopt.ok{border-color:var(--green);background:rgba(76,175,130,.15);color:var(--green)}
+.qopt.ng{border-color:var(--red);background:rgba(192,57,43,.15);color:#e74c3c}
+.qopt:disabled{cursor:default}
+.qfb{margin-top:.8rem;padding:.65rem;border-radius:8px;font-size:.85rem;display:none}
+.qfb.show{display:block}
+.qfb.ok{background:rgba(76,175,130,.1);color:var(--green);border:1px solid var(--green)}
+.qfb.ng{background:rgba(192,57,43,.1);color:#e74c3c;border:1px solid var(--red)}
+.nxt-btn{margin-top:.8rem;padding:.65rem 1.4rem;background:var(--gold-d);color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:'Noto Sans Bengali',sans-serif;font-size:.88rem;display:none}
+.nxt-btn.show{display:inline-block}
+.nxt-btn:hover{background:var(--gold)}
+.badges-sec h3{font-family:'Noto Serif Bengali',serif;color:var(--gold);margin-bottom:.8rem;font-size:.95rem}
+.badges-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.7rem}
+.badge{background:var(--dark2);border:1px solid var(--dark4);border-radius:var(--r);padding:.9rem;text-align:center}
+.badge.earned{border-color:var(--gold-d);background:rgba(201,169,110,.08)}
+.badge.locked{opacity:.4}
+.bi{font-size:1.8rem;margin-bottom:.3rem}
+.bn{font-size:.75rem;color:var(--gold)}
+.bd{font-size:.65rem;color:var(--muted);margin-top:.15rem}
+/* KIDS */
+.kids-hdr{text-align:center;padding:1.2rem;background:linear-gradient(135deg,rgba(76,175,130,.1),rgba(201,169,110,.1));border-radius:var(--r);border:1px solid var(--dark4);margin-bottom:1.2rem}
+.kids-hdr h2{font-family:'Noto Serif Bengali',serif;font-size:1.3rem;color:var(--gold)}
+.kids-hdr p{color:var(--muted);font-size:.82rem;margin-top:.3rem}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.9rem}
+.scard2{background:var(--dark2);border:1px solid var(--dark4);border-radius:var(--r);padding:1.1rem;cursor:pointer;transition:all .25s}
+.scard2:hover{border-color:var(--gold-d);transform:translateY(-2px)}
+.semoji{font-size:2.3rem;margin-bottom:.6rem}
+.stitle{font-family:'Noto Serif Bengali',serif;font-size:.95rem;color:var(--gold);margin-bottom:.4rem}
+.spreview{font-size:.8rem;color:var(--muted);line-height:1.6}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:2000;align-items:center;justify-content:center;padding:1rem}
+.modal-bg.open{display:flex}
+.modal{background:var(--dark2);border:2px solid var(--gold-d);border-radius:16px;padding:1.8rem;max-width:480px;width:100%;position:relative;max-height:90vh;overflow-y:auto}
+.mclose{position:absolute;top:.8rem;right:.8rem;background:var(--dark4);border:none;color:var(--muted);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:.95rem}
+.memoji{font-size:2.8rem;text-align:center;margin-bottom:.8rem}
+.mtitle{font-family:'Noto Serif Bengali',serif;font-size:1.1rem;color:var(--gold);text-align:center;margin-bottom:.9rem}
+.mstory{line-height:1.9;font-size:.92rem;margin-bottom:.9rem}
+.mlesson{background:rgba(76,175,130,.1);border:1px solid var(--green);border-radius:8px;padding:.65rem 1rem;font-size:.82rem;color:var(--green)}
+.mlesson::before{content:"💡 শিক্ষা: ";font-weight:700}
+.voice-btn{display:block;width:100%;margin-top:.9rem;padding:.65rem;background:rgba(201,169,110,.12);border:1px solid var(--gold-d);border-radius:8px;color:var(--gold);cursor:pointer;font-family:'Noto Sans Bengali',sans-serif;font-size:.85rem}
+.voice-btn:hover{background:rgba(201,169,110,.22)}
+/* BATTLES */
+.btl-list{display:grid;gap:.7rem}
+.btl{background:var(--dark2);border:1px solid var(--dark4);border-left:4px solid var(--red);border-radius:var(--r);padding:.9rem 1.1rem;cursor:pointer;transition:all .2s}
+.btl:hover{background:var(--dark3)}
+.btl-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem}
+.btl-name{font-family:'Noto Serif Bengali',serif;font-size:.95rem}
+.btl-res{font-size:.7rem;padding:.18rem .55rem;border-radius:12px;background:rgba(76,175,130,.15);color:var(--green);border:1px solid var(--green)}
+.btl-res.p{background:rgba(224,123,79,.15);color:#e07b4f;border-color:#e07b4f}
+.btl-meta{display:flex;flex-wrap:wrap;gap:.6rem;font-size:.75rem;color:var(--muted)}
+.btl-detail{font-size:.82rem;color:var(--muted);margin-top:.5rem;display:none;line-height:1.7}
+.btl.open .btl-detail{display:block}
+.btl.open{border-left-color:var(--gold)}
+/* TOAST */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(120px);background:var(--dark3);border:1px solid var(--gold-d);border-radius:24px;padding:.55rem 1.1rem;font-size:.82rem;color:var(--gold);z-index:3000;transition:transform .3s;white-space:nowrap;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+@media(max-width:600px){.stat-row{grid-template-columns:1fr 1fr}.scard.gs{grid-column:span 2}}
+</style>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">☪️</div>
+      <div>
+        <h1>একনজরে সিরাত</h1>
+        <p>নবীজির জীবনকথা ﷺ</p>
+      </div>
+    </div>
+    <div class="xp-pill" id="xp-pill">⭐ <b id="hxp">0</b> XP &nbsp;|&nbsp; <span id="hlvl">Level 1</span></div>
+  </div>
+</div>
+
+<div class="nav">
+  <div class="nav-inner">
+    <button class="tab on" data-tab="map">🗺️ মানচিত্র</button>
+    <button class="tab" data-tab="timeline">📅 টাইমলাইন</button>
+    <button class="tab" data-tab="quiz">🎮 কুইজ</button>
+    <button class="tab" data-tab="kids">👶 শিশু কর্নার</button>
+    <button class="tab" data-tab="battles">⚔️ যুদ্ধসমূহ</button>
+  </div>
+</div>
+
+<div class="panel on" id="panel-map">
+  <div class="sh">🗺️ ঐতিহাসিক স্থানসমূহ</div>
+  <div id="map"></div>
+  <div class="map-info" id="map-info">
+    <h3>📍 স্থান বেছে নিন</h3>
+    <p style="color:var(--muted);font-size:.85rem">পিনে বা নিচের বোতামে ক্লিক করুন</p>
+  </div>
+  <div class="legend" id="legend"></div>
+</div>
+
+<div class="panel" id="panel-timeline">
+  <div class="sh">📅 জীবনের টাইমলাইন</div>
+  <div class="phase-btns">
+    <button class="pbtn on" data-phase="all">সব ঘটনা</button>
+    <button class="pbtn" data-phase="makki">🕋 মক্কি জীবন</button>
+    <button class="pbtn" data-phase="madani">🌙 মাদানি জীবন</button>
+  </div>
+  <div class="tl" id="tl-list"></div>
+</div>
+
+<div class="panel" id="panel-quiz">
+  <div class="sh">🎮 সিরাত কুইজ</div>
+  <div class="stat-row">
+    <div class="scard gx"><div class="v" id="qxp">0</div><div class="l">⭐ মোট XP</div></div>
+    <div class="scard gl"><div class="v" id="qlvl">১</div><div class="l">🏆 Level</div></div>
+    <div class="scard gs"><div class="v" id="qstr">0</div><div class="l">🔥 Streak</div></div>
+  </div>
+  <div class="bar-wrap">
+    <p>পরবর্তী লেভেলে <span id="xpneed">100</span> XP দরকার</p>
+    <div class="bar"><div class="bar-fill" id="bar-fill" style="width:0%"></div></div>
+  </div>
+  <div class="qbox">
+    <div class="qq" id="qq"></div>
+    <div class="qopts" id="qopts"></div>
+    <div class="qfb" id="qfb"></div>
+    <button class="nxt-btn" id="nxt-btn">পরবর্তী প্রশ্ন →</button>
+  </div>
+  <div class="badges-sec">
+    <h3>🏅 তোমার ব্যাজ</h3>
+    <div class="badges-grid" id="badges-grid"></div>
+  </div>
+</div>
+
+<div class="panel" id="panel-kids">
+  <div class="kids-hdr">
+    <h2>👶 শিশু কর্নার</h2>
+    <p>ছোটদের জন্য নবীজির ﷺ সহজ গল্প</p>
+  </div>
+  <div class="sgrid" id="sgrid"></div>
+</div>
+
+<div class="panel" id="panel-battles">
+  <div class="sh">⚔️ যুদ্ধসমূহ</div>
+  <div class="btl-list" id="btl-list"></div>
+</div>
+
+<div class="modal-bg" id="story-modal">
+  <div class="modal">
+    <button class="mclose" id="mclose">✕</button>
+    <div class="memoji" id="memoji"></div>
+    <div class="mtitle" id="mtitle"></div>
+    <div class="mstory" id="mstory"></div>
+    <div class="mlesson" id="mlesson"></div>
+    <button class="voice-btn" id="voice-btn">🔊 গল্পটি শুনুন</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══ DATA ══ */
+const LOCATIONS=[
+  {id:1,name:"মক্কা",en:"Mecca",lat:21.4225,lng:39.8262,icon:"🕋",color:"#c9a96e",events:["নবীজির জন্ম (৫৭০ খ্রি.)","প্রথম ওহী নাজিল","ইসলামের প্রথম প্রচার","মক্কা বিজয় (৬৩০ খ্রি.)"]},
+  {id:2,name:"মদিনা",en:"Medina",lat:24.5247,lng:39.5692,icon:"🌙",color:"#4caf82",events:["হিজরত (৬২২ খ্রি.)","মসজিদে নববী নির্মাণ","মদিনা সনদ","নবীজির ওফাত (৬৩২ খ্রি.)"]},
+  {id:3,name:"হেরা গুহা",en:"Cave of Hira",lat:21.4577,lng:39.8594,icon:"🌟",color:"#e8c547",events:["প্রথম ওহী নাজিল (৬১০ খ্রি.)","জিবরাইল (আ.)-এর আগমন","ইকরা আয়াত নাজিল"]},
+  {id:4,name:"উহুদ পাহাড়",en:"Mount Uhud",lat:24.5106,lng:39.5984,icon:"⛰️",color:"#e07b4f",events:["উহুদ যুদ্ধ (৬২৫ খ্রি.)","হামজা (রা.)-এর শাহাদত","৭০ জন সাহাবির শাহাদত"]},
+  {id:5,name:"বদর",en:"Badr",lat:23.734,lng:38.791,icon:"⚔️",color:"#c0392b",events:["বদর যুদ্ধ (৬২৪ খ্রি.)","মুসলিমদের প্রথম বড় বিজয়","৩১৩ জন সাহাবি বনাম ১০০০ কাফের"]},
+  {id:6,name:"তায়েফ",en:"Taif",lat:21.2703,lng:40.4158,icon:"💔",color:"#8e44ad",events:["তায়েফ সফর (৬১৯ খ্রি.)","নবীজিকে পাথর নিক্ষেপ","সবচেয়ে কষ্টের দিন"]},
+  {id:7,name:"মসজিদে নববী",en:"Masjid al-Nabawi",lat:24.5274,lng:39.6172,icon:"🕌",color:"#27ae60",events:["৬২২ খ্রি. নির্মাণ","নবীজির রওজা মোবারক","ইসলামের দ্বিতীয় পবিত্র মসজিদ"]},
+  {id:8,name:"খন্দক",en:"Khandaq",lat:24.54,lng:39.58,icon:"🛡️",color:"#2980b9",events:["খন্দক যুদ্ধ (৬২৭ খ্রি.)","পরিখা খনন","আহযাব বাহিনীর পরাজয়"]},
+];
+const TIMELINE=[
+  {year:570,hijri:"",title:"নবীজির জন্ম",detail:"রবিউল আউয়াল মাসে মক্কায় জন্ম। পিতা আব্দুল্লাহ আগেই মারা গিয়েছিলেন।",icon:"🌟",phase:"makki"},
+  {year:576,hijri:"",title:"মায়ের ইন্তেকাল",detail:"মাত্র ৬ বছর বয়সে মা আমিনার ইন্তেকাল হয়। দাদার কাছে আসেন।",icon:"💧",phase:"makki"},
+  {year:595,hijri:"",title:"বিবি খাদিজার সাথে বিবাহ",detail:"২৫ বছর বয়সে বিবি খাদিজা (রা.)-এর সাথে বিবাহ। তিনি প্রথম মুসলিম।",icon:"💍",phase:"makki"},
+  {year:610,hijri:"নবুওয়াতের ১ম বছর",title:"প্রথম ওহী",detail:"হেরা গুহায় জিবরাইল (আ.) আসেন। প্রথম আয়াত 'ইকরা' নাজিল। ৪০ বছর বয়সে নবুওয়াত।",icon:"🌟",phase:"makki"},
+  {year:613,hijri:"নবুওয়াতের ৩য় বছর",title:"প্রকাশ্য দাওয়াত",detail:"সাফা পাহাড়ে দাঁড়িয়ে প্রকাশ্যে ইসলামের দাওয়াত। কুরাইশরা বিরোধিতা শুরু করে।",icon:"📢",phase:"makki"},
+  {year:619,hijri:"নবুওয়াতের ১০ম বছর",title:"দুঃখের বছর",detail:"বিবি খাদিজা ও চাচা আবু তালিব উভয়ই ইন্তেকাল করেন। তায়েফে পাথর নিক্ষেপ।",icon:"💔",phase:"makki"},
+  {year:620,hijri:"নবুওয়াতের ১১তম বছর",title:"মিরাজ",detail:"মসজিদুল হারাম থেকে আকসা, তারপর সপ্ত আসমান ভ্রমণ। পাঁচ ওয়াক্ত নামাজ ফরজ।",icon:"🌙",phase:"makki"},
+  {year:622,hijri:"হিজরী ১ম বছর",title:"মদিনায় হিজরত",detail:"মক্কা থেকে মদিনায় হিজরত। হিজরী সন গণনা শুরু। ইসলামী রাষ্ট্র প্রতিষ্ঠা।",icon:"🚶",phase:"madani"},
+  {year:624,hijri:"হিজরী ২য় বছর",title:"বদর যুদ্ধ",detail:"৩১৩ জন মুসলিম বনাম ১০০০ কাফেরের যুদ্ধ। ঐতিহাসিক বিজয়।",icon:"⚔️",phase:"madani"},
+  {year:625,hijri:"হিজরী ৩য় বছর",title:"উহুদ যুদ্ধ",detail:"উহুদ পাহাড়ের পাদদেশে যুদ্ধ। হামজা (রা.) শহীদ। ৭০ জন সাহাবি শহীদ।",icon:"⛰️",phase:"madani"},
+  {year:627,hijri:"হিজরী ৫ম বছর",title:"খন্দক যুদ্ধ",detail:"পরিখা খনন করে মদিনা রক্ষা। দশ হাজার শত্রু পরাজিত।",icon:"🛡️",phase:"madani"},
+  {year:630,hijri:"হিজরী ৮ম বছর",title:"মক্কা বিজয়",detail:"বিনা রক্তপাতে মক্কা জয়। কাবা থেকে মূর্তি অপসারণ। সাধারণ ক্ষমা।",icon:"🕋",phase:"madani"},
+  {year:632,hijri:"হিজরী ১০ম বছর",title:"বিদায় হজ",detail:"১ লক্ষ ২৪ হাজার সাহাবি নিয়ে হজ। বিদায়ী ভাষণ।",icon:"🕋",phase:"madani"},
+  {year:632,hijri:"হিজরী ১১তম বছর",title:"নবীজির ওফাত",detail:"১২ রবিউল আউয়াল, সোমবার। ৬৩ বছর বয়সে ওফাত। মদিনায় দাফন।",icon:"🌹",phase:"madani"},
+];
+const BATTLES=[
+  {name:"বদর যুদ্ধ",year:624,hijri:"২ হিজরী",loc:"বদর",muslims:313,enemies:1000,result:"মুসলিম বিজয়",detail:"ইসলামের প্রথম বড় যুদ্ধ। আল্লাহর সাহায্যে অবিশ্বাস্য বিজয়।"},
+  {name:"উহুদ যুদ্ধ",year:625,hijri:"৩ হিজরী",loc:"উহুদ",muslims:700,enemies:3000,result:"আংশিক পরাজয়",detail:"তীরন্দাজরা পাহাড় ছেড়ে যাওয়ায় আক্রমণ হয়। হামজা (রা.) শহীদ।"},
+  {name:"খন্দক যুদ্ধ",year:627,hijri:"৫ হিজরী",loc:"মদিনা",muslims:3000,enemies:10000,result:"মুসলিম বিজয়",detail:"পরিখা কৌশলে শত্রু ব্যর্থ। ঝড়ে শত্রু পালিয়ে যায়।"},
+  {name:"মক্কা বিজয়",year:630,hijri:"৮ হিজরী",loc:"মক্কা",muslims:10000,enemies:0,result:"বিনা যুদ্ধে বিজয়",detail:"১০ হাজার সৈন্য নিয়ে প্রবেশ। সাধারণ ক্ষমা ঘোষণা।"},
+  {name:"হুনায়ন যুদ্ধ",year:630,hijri:"৮ হিজরী",loc:"হুনায়ন",muslims:12000,enemies:4000,result:"মুসলিম বিজয়",detail:"প্রথমে পিছু হটতে হলেও শেষে বিজয়।"},
+  {name:"তাবুক অভিযান",year:630,hijri:"৯ হিজরী",loc:"তাবুক",muslims:30000,enemies:0,result:"বিনা যুদ্ধে সমাপ্ত",detail:"রোমান বাহিনী যুদ্ধ না করে পালিয়ে যায়।"},
+];
+const STORIES=[
+  {title:"ছোট মুহাম্মদের গল্প",emoji:"👶",story:"অনেক অনেক দিন আগের কথা। আরবের মক্কা শহরে একটি ছোট্ট শিশু জন্ম নিল। তার নাম রাখা হলো মুহাম্মদ। সবাই তাকে খুব ভালোবাসত। তিনি কখনো মিথ্যা বলতেন না। সবাই তাকে 'আল-আমিন' বলে ডাকত — মানে বিশ্বস্ত।",lesson:"সবসময় সত্য কথা বলব।"},
+  {title:"হেরা গুহার আলো",emoji:"✨",story:"মুহাম্মদ (সা.) মাঝে মাঝে হেরা গুহায় যেতেন ভাবতে। একদিন একজন ফেরেশতা আসলেন। তিনি বললেন — 'পড়ো!' এটাই ছিল আল্লাহর প্রথম বার্তা। সেদিন থেকে তিনি নবী হলেন।",lesson:"পড়াশোনা করা খুব গুরুত্বপূর্ণ।"},
+  {title:"তায়েফের কষ্ট",emoji:"💚",story:"তায়েফের লোকেরা নবীজিকে পাথর ছুড়েছিল। তিনি অনেক ব্যথা পেলেন। কিন্তু তিনি তাদের জন্য দোয়া করলেন — হয়তো তাদের সন্তানেরা একদিন মুসলমান হবে।",lesson:"কেউ কষ্ট দিলেও মাফ করে দিতে হয়।"},
+  {title:"বদরের ৩১৩ জন",emoji:"⚔️",story:"একবার মাত্র ৩১৩ জন মুসলমান ১০০০ শত্রুর বিরুদ্ধে লড়াই করল। সবাই ভয় পেয়েছিল। কিন্তু আল্লাহ সাহায্য করলেন। ছোট্ট দলটি জিতে গেল!",lesson:"সৎ পথে থাকলে আল্লাহ সাহায্য করেন।"},
+];
+const BADGES=[
+  {id:"b0",name:"সিরাত শিক্ষার্থী",icon:"📚",req:0,desc:"শুরু করেছ!"},
+  {id:"b1",name:"জিজ্ঞাসু",icon:"🔍",req:50,desc:"৫০ XP অর্জন"},
+  {id:"b2",name:"বদরের যোদ্ধা",icon:"⚔️",req:150,desc:"১৫০ XP অর্জন"},
+  {id:"b3",name:"সাহাবি বিশেষজ্ঞ",icon:"🎓",req:300,desc:"৩০০ XP অর্জন"},
+  {id:"b4",name:"সিরাত হাফেজ",icon:"👑",req:500,desc:"৫০০ XP অর্জন"},
+];
+const QS=[
+  {q:"নবীজি কোন শহরে জন্মগ্রহণ করেন?",opts:["মদিনা","মক্কা","তায়েফ","জেরুজালেম"],ans:1,xp:10},
+  {q:"প্রথম ওহী কোন গুহায় নাজিল হয়?",opts:["সুর গুহা","হেরা গুহা","উহুদ গুহা","বদর গুহা"],ans:1,xp:10},
+  {q:"বদর যুদ্ধে মুসলিমদের সংখ্যা কত ছিল?",opts:["১০০","২০০","৩১৩","৫০০"],ans:2,xp:15},
+  {q:"নবীজির প্রথম স্ত্রীর নাম কী?",opts:["আয়েশা","ফাতিমা","খাদিজা","হাফসা"],ans:2,xp:10},
+  {q:"হিজরত কোন বছর হয়?",opts:["৬১০ খ্রি.","৬২০ খ্রি.","৬২২ খ্রি.","৬৩০ খ্রি."],ans:2,xp:15},
+  {q:"নবীজির বয়স কত হলে নবুওয়াত শুরু হয়?",opts:["৩০","৩৫","৪০","৪৫"],ans:2,xp:10},
+  {q:"মক্কা বিজয় কোন হিজরীতে হয়?",opts:["৫ হিজরী","৬ হিজরী","৭ হিজরী","৮ হিজরী"],ans:3,xp:15},
+  {q:"উহুদ যুদ্ধে কতজন সাহাবি শহীদ হন?",opts:["৩০","৫০","৭০","১০০"],ans:2,xp:15},
+  {q:"নবীজিকে 'আল-আমিন' কেন বলা হতো?",opts:["সুন্দর বলে","বিশ্বস্ত বলে","শক্তিশালী বলে","ধনী বলে"],ans:1,xp:10},
+  {q:"বিদায় হজে কতজন সাহাবি ছিলেন?",opts:["১০ হাজার","৫০ হাজার","১ লক্ষ ২৪ হাজার","২ লক্ষ"],ans:2,xp:20},
+];
+
+/* ══ STATE ══ */
+const ST=JSON.parse(localStorage.getItem('sirah2')||'{"xp":0,"streak":0,"qi":0,"badges":["b0"]}');
+let answered=false, curStory=null;
+
+function save(){localStorage.setItem('sirah2',JSON.stringify(ST));}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+
+/* ══ TABS ══ */
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+    btn.classList.add('on');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('on');
+    if(btn.dataset.tab==='map') initMap();
+  });
+});
+
+/* ══ MAP ══ */
+let mapDone=false, lmap;
+function initMap(){
+  if(mapDone)return; mapDone=true;
+  lmap=L.map('map',{center:[23,39.5],zoom:5});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(lmap);
+  LOCATIONS.forEach(loc=>{
+    const ic=L.divIcon({className:'',html:`<div style="background:${loc.color}22;border:2.5px solid ${loc.color};border-radius:50% 50% 50% 0;transform:rotate(-45deg);width:36px;height:36px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px #0008"><span style="transform:rotate(45deg);font-size:1.1rem">${loc.icon}</span></div>`,iconSize:[36,36],iconAnchor:[18,36]});
+    L.marker([loc.lat,loc.lng],{icon:ic}).addTo(lmap).on('click',()=>showLoc(loc));
+  });
+  const lg=document.getElementById('legend');
+  LOCATIONS.forEach(loc=>{
+    const b=document.createElement('button');
+    b.className='leg-btn';b.textContent=loc.icon+' '+loc.name;
+    b.onclick=()=>{lmap.setView([loc.lat,loc.lng],8,{animate:true});showLoc(loc);};
+    lg.appendChild(b);
+  });
+}
+function showLoc(loc){
+  document.getElementById('map-info').innerHTML=`<h3>${loc.icon} ${loc.name}</h3><ul>${loc.events.map(e=>`<li>• ${e}</li>`).join('')}</ul>`;
+}
+
+/* ══ TIMELINE ══ */
+function buildTL(phase){
+  const el=document.getElementById('tl-list');
+  el.innerHTML='';
+  (phase==='all'?TIMELINE:TIMELINE.filter(t=>t.phase===phase)).forEach(item=>{
+    const d=document.createElement('div');
+    d.className='tl-row';
+    d.innerHTML=`<div class="tl-dot">${item.icon}</div><div class="tl-body"><div class="tl-yr">${item.year} খ্রি.${item.hijri?' • '+item.hijri:''}</div><div class="tl-title">${item.title}</div><div class="tl-detail">${item.detail}</div></div>`;
+    d.onclick=()=>d.classList.toggle('open');
+    el.appendChild(d);
+  });
+}
+document.querySelectorAll('.pbtn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    buildTL(btn.dataset.phase);
+  });
+});
+buildTL('all');
+
+/* ══ QUIZ ══ */
+const XPL=100;
+function lvl(xp){return Math.floor(xp/XPL)+1;}
+function refreshXP(){
+  const l=lvl(ST.xp), prog=ST.xp%XPL;
+  document.getElementById('qxp').textContent=ST.xp;
+  document.getElementById('qlvl').textContent=l;
+  document.getElementById('qstr').textContent=ST.streak;
+  document.getElementById('hxp').textContent=ST.xp;
+  document.getElementById('hlvl').textContent='Level '+l;
+  document.getElementById('xpneed').textContent=XPL-prog;
+  document.getElementById('bar-fill').style.width=(prog/XPL*100)+'%';
+  checkBadges(); buildBadges();
+}
+function loadQ(){
+  answered=false;
+  const q=QS[ST.qi%QS.length];
+  document.getElementById('qq').textContent=q.q;
+  const el=document.getElementById('qopts'); el.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const b=document.createElement('button'); b.className='qopt'; b.textContent=o;
+    b.onclick=()=>answer(i,q.ans,q.xp,b);
+    el.appendChild(b);
+  });
+  document.getElementById('qfb').className='qfb';
+  document.getElementById('nxt-btn').className='nxt-btn';
+}
+function answer(chosen,correct,xpVal,btn){
+  if(answered)return; answered=true;
+  document.querySelectorAll('.qopt').forEach((o,i)=>{o.disabled=true;if(i===correct)o.classList.add('ok');});
+  const fb=document.getElementById('qfb');
+  if(chosen===correct){
+    btn.classList.add('ok'); ST.xp+=xpVal; ST.streak++;
+    fb.textContent='✅ সঠিক! +'+xpVal+' XP অর্জন!'; fb.className='qfb show ok';
+    toast('🎉 সঠিক! +'+xpVal+' XP');
+  } else {
+    btn.classList.add('ng'); ST.streak=0;
+    fb.textContent='❌ ভুল! সঠিক: '+QS[ST.qi%QS.length].opts[correct]; fb.className='qfb show ng';
+  }
+  document.getElementById('nxt-btn').className='nxt-btn show';
+  refreshXP(); save();
+}
+document.getElementById('nxt-btn').addEventListener('click',()=>{ST.qi++;save();loadQ();});
+function checkBadges(){BADGES.forEach(b=>{if(ST.xp>=b.req&&!ST.badges.includes(b.id)){ST.badges.push(b.id);toast('🏅 নতুন ব্যাজ: '+b.name);}});}
+function buildBadges(){
+  const g=document.getElementById('badges-grid'); g.innerHTML='';
+  BADGES.forEach(b=>{
+    const c=document.createElement('div');
+    c.className='badge '+(ST.badges.includes(b.id)?'earned':'locked');
+    c.innerHTML=`<div class="bi">${b.icon}</div><div class="bn">${b.name}</div><div class="bd">${b.desc}</div>`;
+    g.appendChild(c);
+  });
+}
+refreshXP(); loadQ();
+
+/* ══ KIDS ══ */
+const sg=document.getElementById('sgrid');
+STORIES.forEach((s,i)=>{
+  const c=document.createElement('div'); c.className='scard2';
+  c.innerHTML=`<div class="semoji">${s.emoji}</div><div class="stitle">${s.title}</div><div class="spreview">${s.story.slice(0,80)}...</div>`;
+  c.onclick=()=>openStory(i);
+  sg.appendChild(c);
+});
+function openStory(i){
+  curStory=STORIES[i];
+  document.getElementById('memoji').textContent=curStory.emoji;
+  document.getElementById('mtitle').textContent=curStory.title;
+  document.getElementById('mstory').textContent=curStory.story;
+  document.getElementById('mlesson').textContent=curStory.lesson;
+  document.getElementById('story-modal').classList.add('open');
+}
+document.getElementById('mclose').addEventListener('click',()=>{document.getElementById('story-modal').classList.remove('open');speechSynthesis.cancel();});
+document.getElementById('voice-btn').addEventListener('click',()=>{
+  if(!curStory)return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(curStory.story);
+  u.lang='bn-BD'; u.rate=0.85;
+  speechSynthesis.speak(u);
+  const vb=document.getElementById('voice-btn');
+  vb.textContent='🔊 পড়া হচ্ছে...';
+  u.onend=()=>vb.textContent='🔊 গল্পটি শুনুন';
+});
+
+/* ══ BATTLES ══ */
+const bl=document.getElementById('btl-list');
+BATTLES.forEach(b=>{
+  const c=document.createElement('div'); c.className='btl';
+  const partial=b.result.includes('পরাজ')||b.result.includes('আংশিক');
+  c.innerHTML=`<div class="btl-hdr"><div class="btl-name">⚔️ ${b.name}</div><div class="btl-res ${partial?'p':''}">${b.result}</div></div><div class="btl-meta"><span>📅 ${b.year} (${b.hijri})</span><span>📍 ${b.loc}</span><span>🧕 ${b.muslims} মুসলিম</span>${b.enemies>0?`<span>🛡️ ${b.enemies} শত্রু</span>`:''}</div><div class="btl-detail">${b.detail}</div>`;
+  c.onclick=()=>c.classList.toggle('open');
+  bl.appendChild(c);
+});
+
+</script>
+</body>
+</html>
