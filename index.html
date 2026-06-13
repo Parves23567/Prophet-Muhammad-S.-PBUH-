@@ -1217,29 +1217,6 @@ document.getElementById('voice-btn').addEventListener('click',()=>{
 });
 
 /* ══ BATTLES ══ */
-/* ══ BATTLES — Google Sheet ══ */
-const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRzQPG21ztYI_4adlIB-JGImrY9yVKQIamk7uahngSE2gq9w38GgBOCWwB8ARaDrFzpHHWyFhbBklai/pub?output=csv';
-
-function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
-  return lines.slice(1).map(line => {
-    // Handle quoted fields with commas inside
-    const fields = [];
-    let cur = '', inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === '"') { inQ = !inQ; }
-      else if (ch === ',' && !inQ) { fields.push(cur.trim()); cur = ''; }
-      else { cur += ch; }
-    }
-    fields.push(cur.trim());
-    const row = {};
-    headers.forEach((h, i) => { row[h] = (fields[i] || '').replace(/^"|"$/g, '').trim(); });
-    return row;
-  }).filter(r => r['যুদ্ধের নাম'] || r['আইডি']);
-}
-
 function renderSheetBattles(rows) {
   const bl = document.getElementById('btl-list');
   bl.innerHTML = '';
@@ -1327,6 +1304,8 @@ function renderSheetBattles(rows) {
   });
 }
 
+const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbyj5HQU4nm2sQq1TMWLmXp92b7QO9fwEpLPCaPaPWzo4mEBUtO7V_GPqbPRwDS61QHB/exec';
+
 function loadBattlesFromSheet() {
   const btn = document.getElementById('sheet-refresh-btn');
   const status = document.getElementById('sheet-status');
@@ -1334,46 +1313,55 @@ function loadBattlesFromSheet() {
 
   btn.disabled = true;
   btn.textContent = '⏳';
-  status.textContent = 'Sheet থেকে লোড হচ্ছে...';
+  status.textContent = 'লোড হচ্ছে...';
   bl.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--muted)">⏳ ডেটা লোড হচ্ছে...</div>`;
 
-  const CORS_URL = 'https://corsproxy.io/?' + encodeURIComponent(SHEET_CSV_URL);
+  /* JSONP — Apps Script CORS bypass */
+  const cbName = 'siratCb_' + Date.now();
+  const script = document.createElement('script');
+  const timer = setTimeout(function() {
+    cleanup();
+    loadFromCache('⏱️ টাইমআউট');
+  }, 10000);
 
-  fetch(CORS_URL)
-    .then(function(r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.text();
-    })
-    .then(function(csv) {
-      const rows = parseCSV(csv);
-      if (!rows.length) throw new Error('কোনো ডেটা পাওয়া যায়নি');
+  function cleanup() {
+    delete window[cbName];
+    if (script.parentNode) script.parentNode.removeChild(script);
+    clearTimeout(timer);
+    btn.disabled = false;
+    btn.textContent = '🔄 আপডেট';
+  }
+
+  window[cbName] = function(rows) {
+    cleanup();
+    if (!rows || !rows.length) { loadFromCache('ডেটা নেই'); return; }
+    rows = rows.filter(r => r['যুদ্ধের নাম'] || r['আইডি']);
+    renderSheetBattles(rows);
+    const now = new Date().toLocaleTimeString('bn-BD');
+    status.textContent = '✅ ' + rows.length + 'টি যুদ্ধ লোড • ' + now;
+    localStorage.setItem('battles_cache', JSON.stringify({time: Date.now(), rows}));
+  };
+
+  script.onerror = function() {
+    cleanup();
+    loadFromCache('❌ লোড ব্যর্থ');
+  };
+
+  script.src = SHEET_API_URL + '?callback=' + cbName;
+  document.head.appendChild(script);
+
+  function loadFromCache(reason) {
+    const cached = localStorage.getItem('battles_cache');
+    if (cached) {
+      const {time, rows} = JSON.parse(cached);
       renderSheetBattles(rows);
-      const now = new Date().toLocaleTimeString('bn-BD');
-      status.textContent = '✅ ' + rows.length + 'টি যুদ্ধ লোড হয়েছে • ' + now;
-      localStorage.setItem('battles_cache', JSON.stringify({time: Date.now(), rows}));
-    })
-    .catch(function(err) {
-      console.error(err);
-      // Try from cache
-      const cached = localStorage.getItem('battles_cache');
-      if (cached) {
-        const {time, rows} = JSON.parse(cached);
-        renderSheetBattles(rows);
-        const age = Math.round((Date.now()-time)/60000);
-        status.textContent = '⚠️ ক্যাশ থেকে লোড ('+age+' মিনিট আগের)';
-      } else {
-        bl.innerHTML = `<div class="btl-sheet-err">
-          ⚠️ Sheet লোড হয়নি।<br><br>
-          ইন্টারনেট সংযোগ চেক করুন অথবা<br>
-          <a href="${SHEET_CSV_URL}" target="_blank">সরাসরি Sheet খুলুন ↗</a>
-        </div>`;
-        status.textContent = '❌ লোড ব্যর্থ হয়েছে';
-      }
-    })
-    .finally(function() {
-      btn.disabled = false;
-      btn.textContent = '🔄 আপডেট';
-    });
+      const age = Math.round((Date.now()-time)/60000);
+      status.textContent = '⚠️ ক্যাশ (' + age + ' মি. আগের) • ' + reason;
+    } else {
+      bl.innerHTML = `<div class="btl-sheet-err">⚠️ লোড হয়নি। ইন্টারনেট চেক করুন।</div>`;
+      status.textContent = '❌ ' + reason;
+    }
+  }
 }
 
 /* ══ AI CHAT ══ */
